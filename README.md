@@ -1,197 +1,78 @@
-# docker_canvas
-Docker Canvas for Integration Testing
-Docker provisioning for Canvas integration tests (via LTI, etc)
+Grafana Docker Project
+This project demonstrates how to run Grafana, an open-source analytics and monitoring platform, using Docker. Grafana enables you to visualize time-series data and monitor metrics from different data sources with customizable dashboards.
+
+Table of Contents
+Introduction
+Prerequisites
+Installation
+Pull Command
+Run Command
+Usage
+Accessing the Application
+Troubleshooting
+Contributing
+License
+Introduction
+Grafana is an open-source platform for monitoring and observability. It integrates with various data sources such as Prometheus, MySQL, and PostgreSQL, and provides powerful features to visualize metrics, logs, and other time-series data in the form of interactive dashboards. This project sets up Grafana using Docker to make it easy to run the platform in an isolated and portable environment.
+
+This repository contains the configuration and steps required to run Grafana in Docker.
 
 Prerequisites
-Docker Engine
-Docker Compose
-Large amount of memory allocated to your docker machine (Canvas uses a lot of memory). You need ~10GB to build the image and ~6GB to run the image.
-Setting Up via Vendor Quick Start
-As of release/2022-09-14.120
-Mutagen has disappeared, which probably led to the below permission issues
-On Linux, you're likely to encounter permission errors during setup. You have two options:
-Easiest fix is to comment out the CANVAS_SKIP_DOCKER_USERMOD='true' line in script/docker_dev_setup.sh.
-Alternatively, you can follow the instructions in doc/docker/README.md before running setup. The CANVAS_SKIP_DOCKER_USERMOD option is set to true by default in script/docker_dev_setup.sh, so you don't need to set it manually.
-As of release/2022-06-08.121
-Skipping Dory setup now works, see Skip Dory for an alternative setup that still allows the use of the canvas.docker domain.
-Mutagen and mutagen-compose are used for file synchronization between docker and host.
-Skipping Mutagen results in the build failing later on at bundle install
-Note: As of 2022-02-14 and release/2022-02-16.01
-Using Canvas commit 60fe0e86c40a346b6ff845e86b3156c7fbf5d32a
+Before you begin, ensure that you have the following installed:
 
-Refer to the Quick Start instructions.
+Docker (version 19.03 or higher)
+A working internet connection to download the Docker image
+Installation
+To get started with Grafana in Docker, follow these steps:
 
-The script/docker_dev_setup.sh automated setup script is currently working on Debian 11 with the following notes:
+Pull Command
+First, pull the Grafana Docker image from Docker Hub:
 
-dory appears to be mandatory. Install it on the host, not in a container.
-To reset the state of the build, remember to delete both images and volumes.
-Apply the following patch:
-commit a30dd213fee92f452160065f50ade61805d87330 (HEAD)
-Author: William Ono <william.ono@ubc.ca>
-Date:   Mon Feb 14 16:21:39 2022 -0800
+bash
+Copy code
+docker pull grafana/grafana
+This command will download the Grafana Docker image to your system.
 
-    Account for different CLI syntax
+Run Command
+Once the image is downloaded, you can run Grafana as a Docker container. Execute the following command:
 
-diff --git a/script/common/os/linux/impl.sh b/script/common/os/linux/impl.sh
-index 6223f790..fedf0430 100644
---- a/script/common/os/linux/impl.sh
-+++ b/script/common/os/linux/impl.sh
-@@ -3,10 +3,10 @@ source script/common/utils/spinner.sh
- 
- function set_service_util {
-   if installed service; then
--    service_manager='service'
-+    docker_status='service docker status'
-     start_docker="sudo service docker start"
-   elif installed systemctl; then
--    service_manager='systemctl'
-+    docker_status='systemctl status docker'
-     start_docker="sudo systemctl start docker"
-   else
-     echo "Unable to find 'service' or 'systemctl' installed."
-@@ -15,7 +15,7 @@ function set_service_util {
- }
- 
- function start_docker_daemon {
--  eval "$service_manager docker status &> /dev/null" && return 0
-+  eval "$docker_status &> /dev/null" && return 0
-   prompt 'The docker daemon is not running. Start it? [y/n]' confirm
-   [[ ${confirm:-n} == 'y' ]] || return 1
-   eval "$start_docker"
-Skip Dory
-This is using the same method laid out in Communicating between projects. Where we put Canvas on a docker network named docker_canvas_bridge with an alias of canvas.docker. Containers that need to talk to Canvas directly, e.g.: for LTI 1.3 service calls, can reach Canvas via the canvas.docker domain as long as they're added to the docker_canvas_bridge network too. An example docker-compose.override.yml file with this implemented is in this repo as docker-compose.override.skip-dory-example.yml.
+bash
+Copy code
+docker run --name grafana -p 3000:3000 -d grafana/grafana
+--name grafana: Assigns the name "grafana" to the running container.
+-p 3000:3000: Maps port 3000 inside the container (Grafana’s default port) to port 3000 on your local machine, allowing you to access Grafana at http://localhost:3000.
+-d: Runs the container in detached mode (background).
+Usage
+After running the container, Grafana will be available at http://localhost:3000. You can now use Grafana to create and manage dashboards, visualize time-series data, and integrate it with various data sources.
 
-In the example, there's an additional complication, as we're exposing Canvas externally on port 9100 instead of the default port 80. Containers within the same network don't use the external port and needs to talk to the internal port. To maintain consistency, it would be ideal if we can reach Canvas internally on port 9100 too. To this end, the example uses the socat utility to internally port forward 9100 to the Canvas web service on port 80. It is to the socat service that we attach the docker_canvas_bridge network to, since it is the one that'll receive all the requests on port 9100.
+Accessing the Application
+Open your web browser.
+Go to http://localhost:3000.
+The Grafana login page will appear.
+Username: admin
+Password: admin
+Once logged in, you can begin setting up your dashboards and connecting data sources to monitor metrics and visualize performance data.
 
-Old Non-Vendor Method
-Retained for reference.
+Troubleshooting
+Container Not Starting
+If the container fails to start, ensure that Docker is installed and running correctly on your machine. You can check the container logs for any errors by running:
 
-Clone Repo
-git clone https://github.com/ubc/docker-canvas.git docker-canvas
-Generate Canvas Docker Image (with issues encountered on stable branch as of 2021-05-18)
-Based on SHA 9ad21650ebbee144bd96a28aab53507a1bcefc6c. Still working as of tag release\2021-06-23.26.
+bash
+Copy code
+docker logs grafana
+Port Conflicts
+If port 3000 is already in use by another service on your machine, you can change the port mapping by modifying the -p flag in the docker run command. For example, to use port 4000 instead:
 
-The official Canvas docker image might not be up-to-date with the version available on github. If you need an updated image, you will have to build it yourself. Check out Canvas from Instructure's github (make sure you're on the branch you need, e.g.: stable). You will also need to copy the Dockerfile.prod.with.fixes file into the Canvas-lms repo and run:
+bash
+Copy code
+docker run --name grafana -p 4000:3000 -d grafana/grafana
+This would make Grafana accessible at http://localhost:4000.
 
-docker build -t instructure/canvas-lms:stable -f Dockerfile.prod.with.fixes .
-Note that Instructure recommends at around 10 GB of RAM to build this image. This will build and tag the image as a newer version in your docker cache.
+Contributing
+Contributions are welcome! To contribute to this project:
 
-Notes:
-
-There is currently no Dockerfile in Canvas that will generate an easily runnable image. Dockerfile.prod.with.fixes is a stopgap to getting a working version of Canvas running without dory/dinghy.
-It is a combination of Canvas repo's Dockerfile and ubuntu.development.Dockerfile files.
-yarn install needs the --network-timeout 600000 --network-concurrency 1 options or it will fail.`
-If it is the first time running:
-Initialize data by first starting the database:
-
-docker compose up -d db
-Wait a few moments for the database to start then (command might fail if database hasn't finished first time startup):
-
-CANVAS_RAILS5_2=1 docker compose run --rm app bundle exec rake db:create db:initial_setup
-When prompted enter default account email, password, and display name. Also choose to share usage data or not.
-
-The branding assets must also be manually generated when canvas is in production mode:
-
-docker compose run --rm app bundle exec rake canvas:compile_assets
-docker compose run --rm app bundle exec rake brand_configs:generate_and_upload_all
-Edit /ect/hosts and add the line:
-
-127.0.0.1 docker_canvas_app
-Finally startup all the services:
-
-docker compose up -d
-Canvas is accessible at
-
-http://docker_canvas_app:8900/
-MailHog (catches all out going mail from canvas) is accessible at
-
-http://localhost:8902/
-Running
-Start Server
-docker compose up -d
-Check Logs
-# app
-docker logs -f docker-canvas_app_1
-
-# more detailed app logs
-docker exec -it docker-canvas_app_1 tail -f log/production.log
-
-# worker
-docker logs -f docker-canvas_worker_1
-
-# db
-docker logs -f docker-canvas_db_1
-
-# redis
-docker logs -f docker-canvas_redis_1
-
-# mail
-docker logs -f docker-canvas_mail_1
-Stop Server
-docker compose stop
-Stop Server and Clean Up
-docker compose down
-rm -rf .data
-Update the DB
-CANVAS_RAILS5_2=1 docker compose run --rm app bundle exec rake db:migrate
-Communicating between projects
-The docker-compose.yml is setup to allow other docker compose projects to connect via external networks. In docker-compose.yml you will see
-
-version: '3.8'
-services:
-  ...
-  app: &app
-    ...
-    networks:
-      default:
-        aliases:
-          - app
-      docker_canvas_bridge:
-        aliases:
-          - docker_canvas_app
-  ...
-networks:
-  docker_canvas_bridge:
-    name: docker_canvas_bridge
-To include the network in another project you just need to add the network (in additional to the default network) and then you can use the alias docker_canvas_app:8900 to connect to the canvas app. For example in another project do:
-
-version: '3.8'
-services:
-  ...
-  app:
-    ...
-    networks:
-      - default
-      - docker_canvas_bridge
-  ...
-networks:
-  docker_canvas_bridge:
-    external: true
-Finally you need to edit your /ect/hosts and add the line (if you haven't already):
-
-127.0.0.1 docker_canvas_app
-So your local machine can connect to Canvas using the same alias (this is important for LTI launch redirects).
-
-Environment Variable Configuration
-Passenger
-PASSENGER_STARTUP_TIMEOUT: Increase to avoid first time startup Passenger timeout errors (can take a while and the timeout might be too short).
-
-Update postgres version (from 9.6 to 12.4)
-docker compose down
-open docker-compose.yml in an editor
-comment out the regular section of db
-uncomment the tianon/postgres-upgrade section of db
-in file explorer / Finder, open the .data folder
-back a backup copy of the entire postgres folder
-rename the postgres folder to postgres-9.6
-docker compose up -d
-wait a few minutes for the upgrade to happen
-docker compose down
-in file explorer / Finder, open the .data folder
-rename the postgres-12 folder to postgres
-edit the pg_hba.conf file in postgres and add host all all all md5 to the bottom
-open docker-compose.yml in an editor
-uncomment the regular section of db
-comment out the tianon/postgres-upgrade section of db
-docker compose up -d
-After you verify that the update worked, you can remove the backup copy of postgres and the postgres-9.6 folders (or keep them as backups for later)
+Fork the repository.
+Create a new branch (git checkout -b feature-branch).
+Commit your changes (git commit -am 'Add new feature').
+Push to your branch (git push origin feature-branch).
+Create a pull request.
