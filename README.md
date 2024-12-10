@@ -15,6 +15,10 @@ License
 Introduction
 Grafana is an open-source platform for monitoring and observability. It integrates with various data sources such as Prometheus, MySQL, and PostgreSQL, and provides powerful features to visualize metrics, logs, and other time-series data in the form of interactive dashboards. This project sets up Grafana using Docker to make it easy to run the platform in an isolated and portable environment.
 
+
+https://github.com/user-attachments/assets/66b05e53-72f2-466f-959e-5f8a2b88664e
+
+
 This repository contains the configuration and steps required to run Grafana in Docker.
 
 Prerequisites
